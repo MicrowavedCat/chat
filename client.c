@@ -14,6 +14,8 @@
 #include <strings.h>
 #include <signal.h>
 
+#define DEBUG 0
+
 #define SERVER_MSG_COMMAND 0
 #define SERVER_COMMAND 1
 #define SERVER_ERROR_COMMAND 2
@@ -78,8 +80,6 @@ void definir_couleur_texte(couleurTexte c) {
             break;
     }
 }
-
-#define DEBUG 1
 
 #define BUFFER_SIZE_READ 2048
 #define BUFFER_SIZE_WRITE 2010
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
   char *ip;
   char *login;
   int protocol = 0;
-  unsigned short port = 12345;
+  unsigned short port = 2021;
   if (!check_args(argc, argv, &ip, &protocol, &port, &login)) return EXIT_FAILURE;
   if(DEBUG) printf("IP : %s, pseudo : %s, port : %d, protocole : %d\n", ip, login, port, protocol);
   
