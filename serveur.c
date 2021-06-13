@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/select.h>
+#include <signal.h>
 
 #define DEFAULT_PORT 2021
 
@@ -19,8 +20,8 @@
 #define PORT_ARG "-p"
 #define MAX_CLIENT_ARG "-m"
 
-#define WARNING_TIMEOUT 300000000
-#define TIMEOUT 10000000//1800000000
+#define WARNING_TIMEOUT 5000000
+#define TIMEOUT 1800000000
 #define SELECT_INTERVAL_SEC 5
 
 #define SERVER_SHUTDOWN_COMMAND "shutdown"
@@ -432,8 +433,7 @@ void TCP_clients(int socketTCP, int socketUDP, int socket, fd_set* set, list_cli
                 }
             } else if(is_type(buff, CLIENT_LEAVE_COMMAND)) {
                 kick(socketUDP, clients, c, set, KICK_MSG_LEFT, KICK_MSG_SEND_TO_ALL);
-                client_left(clients, socketUDP, set, c);
-            } else if(is_type(buff, CLIENT_MSG_COMMAND)) {
+             } else if(is_type(buff, CLIENT_MSG_COMMAND)) {
                 char* dest = create_msg(SERVER_MSG_COMMAND, c->name, &buff[2]);
                 send_all(clients, socketUDP, dest, strlen(dest), set, c);
                 free(dest);
@@ -511,6 +511,7 @@ void UDP_clients(int socketUDP, list_client* clients, fd_set* set, int maxc) {
 }
 
 int main(int argc, char* argv[]) {
+    signal(SIGCHLD, SIG_IGN);
     unsigned short int port = DEFAULT_PORT;
     int socketTCP;
     int socketUDP;
