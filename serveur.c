@@ -26,7 +26,7 @@
 
 #define SERVER_SHUTDOWN_COMMAND "shutdown"
 
-#define BUFFER_SIZE 2048
+#define BUFFER_SIZE 2087
 #define DATE_SIZE 14
 #define NAME_SIZE 20
 #define HEADER_SEPARATOR ':'
@@ -435,7 +435,7 @@ void TCP_clients(int socketTCP, int socketUDP, int socket, fd_set* set, list_cli
                 kick(socketUDP, clients, c, set, KICK_MSG_LEFT, KICK_MSG_SEND_TO_ALL);
              } else if(is_type(buff, CLIENT_MSG_COMMAND)) {
                 char* dest = create_msg(SERVER_MSG_COMMAND, c->name, &buff[2]);
-                send_all(clients, socketUDP, dest, strlen(dest), set, c);
+                send_all(clients, socketUDP, dest, strlen(dest), set, NULL);
                 free(dest);
             } else {
                 int err = 0;
@@ -496,7 +496,7 @@ void UDP_clients(int socketUDP, list_client* clients, fd_set* set, int maxc) {
             kick(socketUDP, clients, c, set, KICK_MSG_LEFT, KICK_MSG_SEND_TO_ALL);
         } else if(is_type(buff, CLIENT_MSG_COMMAND)) {
             char* dest = create_msg(SERVER_MSG_COMMAND, c->name, &buff[2]);
-            send_all(clients, socketUDP, dest, strlen(dest), set, c);
+            send_all(clients, socketUDP, dest, strlen(dest), set, NULL);
             free(dest);
         } else {
             int err = 0;

@@ -13,6 +13,7 @@
 #include <string.h>
 #include <strings.h>
 #include <signal.h>
+#include <ncurses.h>
 
 #define DEBUG 0
 
@@ -41,48 +42,16 @@
 
 //TYPE (serveur)::DATE:MSG (0 à 6)
 
-typedef enum couleurTexte {
-    NOIR,
-    ROUGE,
-    VERT,
-    JAUNE,
-    BLEU,
-    VIOLET,
-    CYAN,
-    BLANC
-} couleurTexte;
+#define COLOR_BLACK 0
+#define COLOR_RED 1
+#define COLOR_GREEN 2
+#define COLOR_YELLOW 3
+#define COLOR_BLUE 4
+#define COLOR_MAGENTA 5
+#define COLOR_CYAN 6
+#define COLOR_WHITE 7
 
-void definir_couleur_texte(couleurTexte c) {
-    switch(c) {
-        case NOIR:
-            printf("\033[0;30m");
-            break;
-        case ROUGE:
-            printf("\033[0;91m");
-            break;
-        case VERT:
-            printf("\033[0;92m");
-            break;
-        case JAUNE:
-            printf("\033[0;93m");
-            break;
-        case BLEU:
-            printf("\033[0;94m");
-            break;
-        case VIOLET:
-            printf("\033[0;95m");
-            break;
-        case CYAN:
-            printf("\033[0;96m");
-            break;
-        default:    /* BLANC */
-            printf("\033[0;97m");
-            break;
-    }
-}
-
-#define BUFFER_SIZE_READ 2048
-#define BUFFER_SIZE_WRITE 2010
+#define BUFFER_SIZE 2097
 
 typedef struct client {
   char* name;
@@ -90,106 +59,118 @@ typedef struct client {
   int tcp;
 } client;
 
-void display_date_time(char date[14]){
-  printf("%c%c/%c%c/%c%c%c%c %c%c:%c%c:%c%c",date[6],date[7],date[4],date[5],date[0],date[1],date[2],date[3],date[8],date[9],date[10],date[11],date[12],date[13]);
+void display_date_time(WINDOW* chat,char date[14]){
+  wprintw(chat,"%c%c/%c%c/%c%c%c%c %c%c:%c%c:%c%c",date[6],date[7],date[4],date[5],date[0],date[1],date[2],date[3],date[8],date[9],date[10],date[11],date[12],date[13]);
 }
 
-void display_message(char *msg) {
-  //printf("MESSAGE : %s\n", msg);
+void display_message(WINDOW* write, WINDOW* chat, char *msg) {
+  int y,x;
+  getyx(write, y, x);
   char d[] = ":";
   char *p = strtok(msg, d);
   int v = atoi(p);
-  //printf("%d\n",v);
-  
   switch(v){
     case SERVER_MSG_COMMAND :
       p = strtok(NULL, d);
       char* pseudo = p;
       p = strtok(NULL, d);
-      definir_couleur_texte(BLEU);
-      display_date_time(p);
-      definir_couleur_texte(BLANC);
-      printf(" -- ");
-      definir_couleur_texte(CYAN);
-      printf("%s", pseudo);
-      definir_couleur_texte(BLANC);
-      printf(" : ");
+      wattron(chat,COLOR_PAIR(4));
+      display_date_time(chat, p);
+      wattroff(chat,COLOR_PAIR(4));
+      wattron(chat,COLOR_PAIR(7));
+      wprintw(chat," -- ");
+      wattroff(chat,COLOR_PAIR(7));
+      wattron(chat,COLOR_PAIR(6));
+      wprintw(chat,"%s", pseudo);
+      wattroff(chat,COLOR_PAIR(6));
+      wattron(chat,COLOR_PAIR(7));
+      wprintw(chat," : ");
       p = strtok(NULL, d);
-      printf("%s", p);
+      wprintw(chat,"%s", p);
       p = strtok(NULL, d);
       while(p != NULL){
-        printf(":%s", p);
+        wprintw(chat,":%s", p);
         p = strtok(NULL, d);
       }
-      printf("\n");
+      wprintw(chat,"\n");
+      wattroff(chat,COLOR_PAIR(7));
       break;
     case SERVER_COMMAND :
       p = strtok(NULL, d);
-      definir_couleur_texte(JAUNE);
-      display_date_time(p);
-      printf(" -- ");
-      printf("[SERVEUR] : ");
+      wattron(chat,COLOR_PAIR(3));
+      display_date_time(chat, p);
+      wprintw(chat," -- ");
+      wprintw(chat,"[SERVEUR] : ");
       p = strtok(NULL, d);
-      printf("%s", p);
+      wprintw(chat,"%s", p);
       p = strtok(NULL, d);
       while(p != NULL){
-        printf(":%s", p);
+        wprintw(chat,":%s", p);
         p = strtok(NULL, d);
       }
-      definir_couleur_texte(BLANC);
-      printf("\n");
+      wattroff(chat,COLOR_PAIR(3));
+      wattron(chat,COLOR_PAIR(7));
+      wprintw(chat,"\n");
+      wattroff(chat,COLOR_PAIR(7));
       break;
     case SERVER_ERROR_COMMAND :
       p = strtok(NULL, d);
-      definir_couleur_texte(ROUGE);
-      display_date_time(p);
-      printf(" -- ");
-      printf("[SERVEUR] : ");
+      wattron(chat,COLOR_PAIR(1));
+      display_date_time(chat, p);
+      wprintw(chat," -- ");
+      wprintw(chat,"[SERVEUR] : ");
       p = strtok(NULL, d);
-      printf("%s", p);
+      wprintw(chat,"%s", p);
       p = strtok(NULL, d);
       while(p != NULL){
-        printf(":%s", p);
+        wprintw(chat,":%s", p);
         p = strtok(NULL, d);
       }
-      definir_couleur_texte(BLANC);
-      printf("\n");
+      wattroff(chat,COLOR_PAIR(1));
+      wattron(chat,COLOR_PAIR(7));
+      wprintw(chat,"\n");
+      wattroff(chat,COLOR_PAIR(7));
       break;
     case SERVER_KICK_COMMAND :
       p = strtok(NULL, d);
-      definir_couleur_texte(ROUGE);
-      display_date_time(p);
-      printf(" -- ");
-      printf("[SERVEUR] : ");
+      wattron(chat,COLOR_PAIR(1));
+      display_date_time(chat, p);
+      wprintw(chat," -- ");
+      wprintw(chat,"[SERVEUR] : ");
       p = strtok(NULL, d);
       int v2 = atoi(p);
       switch(v2){
         case KICK_MSG_NAME_NOT_VALID :
-          printf("EXCLU POUR CAUSE DE PSEUDO NON VALIDE");
+          wprintw(chat,"EXCLU POUR CAUSE DE PSEUDO NON VALIDE");
           break;
         case KICK_MSG_NAME_ALREADY_USED :
-          printf("EXCLU POUR CAUSE DE PSEUDO DÉJÀ UTILISÉ");
+          wprintw(chat,"EXCLU POUR CAUSE DE PSEUDO DEJA UTILISE");
           break;
         case KICK_MSG_TIMEOUT :
-          printf("EXCLU POUR CAUSE D'INACTIVITÉ");
+          wprintw(chat,"EXCLU POUR CAUSE D'INACTIVITE");
           break;
         case KICK_MSG_SERVER_FULL :
-          printf("EXCLU POUR CAUSE DE SERVEUR PLEIN");
+          wprintw(chat,"EXCLU POUR CAUSE DE SERVEUR PLEIN");
           break;
         case KICK_MSG_COMMUNICATION_FAILED :
-          printf("EXCLU POUR CAUSE DE COMMUNICATION ÉCHOUÉ");
+          wprintw(chat,"EXCLU POUR CAUSE DE COMMUNICATION ECHOUE");
           break;
         case KICK_MSG_LEFT :
-          printf("EXCLU SUITE À UNE DEMANDE DE DÉCONNEXION");
+          wprintw(chat,"EXCLU SUITE A UNE DEMANDE DE DECONNEXION");
           break;
         case KICK_MSG_SERVER_SHUTDOWN :
-          printf("EXCLU POUR CAUSE DE FERMETURE DU SERVEUR");
+          wprintw(chat,"EXCLU POUR CAUSE DE FERMETURE DU SERVEUR");
           break;
         default :
           break;
       }
-      definir_couleur_texte(BLANC);
-      printf("\n");
+      wattroff(chat,COLOR_PAIR(1));
+      wattron(chat,COLOR_PAIR(7));
+      wprintw(chat,"\n");
+      wattroff(chat,COLOR_PAIR(7));
+      wrefresh(chat);
+      getch();
+      endwin();
       kill(getppid(), SIGKILL);
       exit(0);
       break;
@@ -197,68 +178,79 @@ void display_message(char *msg) {
       p = strtok(NULL, d);
       pseudo = p;
       p = strtok(NULL, d);
-      definir_couleur_texte(JAUNE);
-      display_date_time(p);
-      printf(" -- ");
-      printf("[SERVEUR] : %s À REJOINT LE SERVEUR", pseudo);
-      definir_couleur_texte(BLANC);
-      printf("\n");
+      wattron(chat,COLOR_PAIR(3));
+      display_date_time(chat, p);
+      wprintw(chat," -- ");
+      wprintw(chat,"[SERVEUR] : %s A REJOINT LE SERVEUR", pseudo);
+      wattroff(chat,COLOR_PAIR(1));
+      wattron(chat,COLOR_PAIR(7));
+      wprintw(chat,"\n");
+      wattroff(chat,COLOR_PAIR(7));
       break;
     case SERVER_LEAVE_COMMAND :
       p = strtok(NULL, d);
       pseudo = p;
       p = strtok(NULL, d);
-      definir_couleur_texte(JAUNE);
-      display_date_time(p);
-      printf(" -- ");
-      printf("[SERVEUR] : %s À QUITTÉ LE SERVEUR", pseudo);
-      definir_couleur_texte(BLANC);
-      printf("\n");
+      wattron(chat,COLOR_PAIR(3));
+      display_date_time(chat, p);
+      wprintw(chat," -- ");
+      wprintw(chat,"[SERVEUR] : %s A QUITTE LE SERVEUR", pseudo);
+      wattroff(chat,COLOR_PAIR(3));
+      wattron(chat,COLOR_PAIR(7));
+      wprintw(chat,"\n");
+      wattroff(chat,COLOR_PAIR(7));
       break;
     default :
-      printf("D : %s\n", msg);
+      wprintw(chat,"D : %s\n", msg);
   }
+  wmove(write,1,x);
+  wrefresh(chat);
+  wrefresh(write);
 }
 
-int check_args(int argc, char *argv[], char *ip[], int *protocol, unsigned short *port, char *login[]);
+int check_args(WINDOW* chat, int argc, char *argv[], char *ip[], int *protocol, unsigned short *port, char *login[]);
 
 int write_message_server(int socket, int type_msg, char* msg) {
-  char msg2[BUFFER_SIZE_WRITE];
+  char msg2[BUFFER_SIZE];
   sprintf(msg2, "%d:%s", type_msg,msg);
-  int ret;
-  if(type_msg == 2)
-    ret = write(socket, msg2, strlen(msg2)-1);
-  else
-    ret = write(socket, msg2, strlen(msg2));
+  int ret = write(socket, msg2, strlen(msg2));
   if(ret == -1) {
     perror("Error write()");
+    getch();
+    endwin();
     exit(errno);
   }
   return ret;
 }
 
 int write_message_server_udp(struct sockaddr_in addr, int sock, int type_msg, char* msg) {
-  char msg2[BUFFER_SIZE_WRITE];
+  char msg2[BUFFER_SIZE];
   sprintf(msg2, "%d:%s", type_msg,msg);
   int size = sizeof(addr);
   if(type_msg == 2){
-    if(sendto(sock, msg2, strlen(msg2)-1, 0, (struct sockaddr *) &addr, size) < 0) {
+    if(sendto(sock, msg2, strlen(msg2), 0, (struct sockaddr *) &addr, size) < 0) {
       perror("sendto()");
+      getch();
+      endwin();
       exit(errno);
     }
     return 1;
   }
   if(sendto(sock, msg2, strlen(msg2), 0, (struct sockaddr *) &addr, size) < 0) {
     perror("sendto()");
+    getch();
+    endwin();
     exit(errno);
   }
   return 1;
 }
 
 int read_message_server(int socket, char* msg) {
-  int ret = read(socket, msg, BUFFER_SIZE_READ - 1);
+  int ret = read(socket, msg, BUFFER_SIZE - 1);
   if(ret == -1) {
     perror("Error read()");
+    getch();
+    endwin();
     exit(errno);
   }
   msg[ret] = '\0';
@@ -268,8 +260,10 @@ int read_message_server(int socket, char* msg) {
 int read_message_server_udp(struct sockaddr_in addr, int sock, char* msg) {
   unsigned int size = sizeof(addr);
   int n;
-  if((n = recvfrom(sock, msg, BUFFER_SIZE_READ - 1, 0, (struct sockaddr *) &addr, &size)) < 0) {
+  if((n = recvfrom(sock, msg, BUFFER_SIZE - 1, 0, (struct sockaddr *) &addr, &size)) < 0) {
     perror("recvfrom()");
+    getch();
+    endwin();
     exit(errno);
   }
   msg[n] = '\0';
@@ -291,6 +285,8 @@ void create_client_UDP(client *client, char *ip, unsigned short port) {
   int sock = socket(AF_INET, SOCK_DGRAM, 0);
   if(sock == -1) {
       perror("error socket()");
+      getch();
+      endwin();
       exit(1);
   }
   client->tcp = sock;
@@ -306,28 +302,96 @@ void create_client_TCP(client *client, char *ip, unsigned short port) {
   client->tcp = socket(AF_INET, SOCK_STREAM, 0);
   if(client->tcp == -1) {
     perror("error socket()");
+    getch();
+    endwin();
     exit(1);
   }
 
   int ok = connect(client->tcp, (struct sockaddr *) &addr, sizeof(addr) );
   if (ok == -1) {
     perror("error connect()");
+    getch();
+    endwin();
     exit(1);
   }
 }
 
+
+
 int main(int argc, char *argv[]) {
+  
+  WINDOW *infos, *haut, *chat, *infos2, *bas, *write,*footer;
+  
+  initscr();
+  start_color();
+
+  init_pair(1, COLOR_RED, COLOR_BLACK);
+  init_pair(2, COLOR_GREEN, COLOR_BLACK);
+  init_pair(3, COLOR_YELLOW, COLOR_BLACK);
+  init_pair(4, COLOR_BLUE, COLOR_BLACK);
+  init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
+  init_pair(6, COLOR_CYAN, COLOR_BLACK);
+  init_pair(7, COLOR_WHITE, COLOR_BLACK);
+
+  clear();
+
+  infos= subwin(stdscr, 1, COLS, 0, 0);
+  haut= subwin(stdscr, LINES - 7, COLS, 1, 0);
+  chat= subwin(stdscr, LINES - 9, COLS -2, 2, 1);
+  infos2= subwin(stdscr, 1, COLS, LINES - 6, 0);
+  bas= subwin(stdscr,  4, COLS, LINES - 5, 0);
+  write= subwin(stdscr,  2, COLS-2, LINES - 4, 1);
+  footer= subwin(stdscr,  1, COLS, LINES - 1, 0);
+
+  if (has_colors() == FALSE) {
+    endwin();
+    printf("Your terminal does not support color\n");
+    exit(1);
+  }
+  
+  
+  
+
+  scrollok(chat,TRUE);
+  scrollok(write,TRUE);
+  box(haut, ACS_VLINE, ACS_HLINE);
+  box(bas, ACS_VLINE, ACS_HLINE);
+
+  wrefresh(haut);
+  wrefresh(bas);
+  
   if (argc < 2) {
-    printf("Usage: %s <adresse IP> <-l username> [<-p> <-t> <-u>]\n", argv[0]);
+    wprintw(chat,"Usage: %s <adresse IP> <-l username> [<-p> <-t> <-u>]\n", argv[0]);
+    wrefresh(chat);
+    getch();
+    endwin();
     return EXIT_FAILURE;
   }
   char *ip;
   char *login;
   int protocol = 0;
   unsigned short port = 2021;
-  if (!check_args(argc, argv, &ip, &protocol, &port, &login)) return EXIT_FAILURE;
-  if(DEBUG) printf("IP : %s, pseudo : %s, port : %d, protocole : %d\n", ip, login, port, protocol);
+  if (!check_args(chat, argc, argv, &ip, &protocol, &port, &login)){
+    wrefresh(chat);
+    getch();
+    endwin();
+    return EXIT_FAILURE;
+  } 
   
+  
+    
+  
+  //if(DEBUG) printf("Adresse : %s:%d - Type de connexion : %d - Pseudo : %s, \n", ip, port, protocol, login);
+  if(protocol)
+    mvwprintw(infos, 0, 1,"Adresse : %s:%d - Type de connexion : UDP - Pseudo : %s \n", ip, port, login);
+  else
+    mvwprintw(infos, 0, 1,"Adresse : %s:%d - Type de connexion : TCP - Pseudo : %s \n", ip, port, login);
+  wrefresh(infos);
+  mvwprintw(infos2, 0, 1,"Message : ");
+  wrefresh(infos2);
+  mvwprintw(footer, 0, COLS/2 - 28,"Crédits : Julien Carcau - Guillaume Descroix - Louka Doz");
+  wrefresh(footer);
+
   client *c = (client*) malloc(sizeof(client));
   c->name = login;
   if(protocol) {  // UDP client
@@ -335,6 +399,8 @@ int main(int argc, char *argv[]) {
     int fork_status = fork();
     if(fork_status == -1) {
       perror("Error fork()");
+      getch();
+      endwin();
       return EXIT_FAILURE;
     }
     if(fork_status > 0) { // write server
@@ -342,11 +408,15 @@ int main(int argc, char *argv[]) {
       sprintf(msg, "%s", c->name);
       //printf("TEST\n");
       write_message_server_udp(c->udp, c->tcp, 1,msg); 
+      //free(msg);
       while(1) {
-        char buf_client[BUFFER_SIZE_WRITE];
-        int nb_read = read(0, &buf_client, BUFFER_SIZE_WRITE-1);
-        buf_client[nb_read] = '\0';
-        if(!strcmp(buf_client, "/quit\n")) {
+        char buf_client[BUFFER_SIZE - 3];
+        int nb_read = mvwgetnstr(write, 1, 0, buf_client, BUFFER_SIZE - 3);
+        if(nb_read == ERR || strlen(buf_client) == 0)
+          continue;
+        wprintw(write, "\n");
+        wrefresh(write);
+        if(!strcmp(buf_client, "/quit")) {
           write_message_server_udp(c->udp, c->tcp, 0, buf_client);
           //kill(fork_status, SIGKILL);
         }
@@ -355,9 +425,9 @@ int main(int argc, char *argv[]) {
       }
     } else {              // read server
       while(1) {
-        char buf_server[BUFFER_SIZE_READ];
+        char buf_server[BUFFER_SIZE];
         read_message_server_udp(c->udp, c->tcp, buf_server);
-        display_message(buf_server);
+        display_message(write, chat, buf_server);
       }
     }
     close_socket_client(c->tcp);
@@ -366,6 +436,8 @@ int main(int argc, char *argv[]) {
     int fork_status = fork();
     if(fork_status == -1) {
       perror("Error fork()");
+      getch();
+      endwin();
       return EXIT_FAILURE;
     }
     if(fork_status > 0) { // write server
@@ -373,30 +445,33 @@ int main(int argc, char *argv[]) {
       sprintf(msg, "%s", c->name);
       write_message_server(c->tcp, 1, msg);
       while(1) {
-        char buf_client[BUFFER_SIZE_WRITE];
-        int nb_read = read(0, &buf_client, BUFFER_SIZE_WRITE-1);
-        buf_client[nb_read] = '\0';
-        if(!strcmp(buf_client, "/quit\n")) {
+        char buf_client[BUFFER_SIZE - 3];
+        int nb_read = mvwgetnstr(write, 1, 0, buf_client, BUFFER_SIZE - 3);
+        if(nb_read == ERR || strlen(buf_client) == 0)
+          continue;
+        wprintw(write, "\n");
+        wrefresh(write);
+        if(!strcmp(buf_client, "/quit")) {
           write_message_server(c->tcp, 0, buf_client);
-          //kill(fork_status, SIGKILL);
         }
         else
           write_message_server(c->tcp, 2, buf_client);
       }
     } else {              // read server
       while(1) {
-        char buf_server[BUFFER_SIZE_READ];
+        char buf_server[BUFFER_SIZE];
         read_message_server(c->tcp, buf_server);
-        display_message(buf_server);
+        display_message(write, chat, buf_server);
       }
     }
     close_socket_client(c->tcp);
   }
   free(ip);
   free(login);
+  return(0);
 }
 
-int check_args(int argc, char *argv[], char *ip[], int *protocol, unsigned short *port, char *login[]) {
+int check_args(WINDOW* chat, int argc, char *argv[], char *ip[], int *protocol, unsigned short *port, char *login[]) {
   for(int i = 1; i < argc; i++) {
     if(!strcmp(argv[i], "-i")) {
       if(i+1 <= argc) {
@@ -406,7 +481,7 @@ int check_args(int argc, char *argv[], char *ip[], int *protocol, unsigned short
           if(argv[i+1][j] == '.') occurences++;
         }
         if(((size < 7) || (size > 15) || occurences != 3)) {
-          printf("Veuillez fournir une adresse IP valide\n");
+          wprintw(chat,"Veuillez fournir une adresse IP valide\n");
           return 0;
         }
 
@@ -419,7 +494,7 @@ int check_args(int argc, char *argv[], char *ip[], int *protocol, unsigned short
     } else if(!strcmp(argv[i], "-p")) {
       if(i+1 <= argc) {
         if(atoi(argv[i+1]) == 0 || (atoi(argv[i+1]) < 1024) || (atoi(argv[i+1]) > 65535)) {
-          printf("Le port doit être un nombre compris entre 1024 et 65535 inclus\n");
+          wprintw(chat,"Le port doit être un nombre compris entre 1024 et 65535 inclus\n");
           return 0;
         }
         *port = atoi(argv[i+1]);
@@ -430,7 +505,7 @@ int check_args(int argc, char *argv[], char *ip[], int *protocol, unsigned short
       if(i+1 <= argc) {
         int size = strlen(argv[i+1]);
         if(((size > 20) || (strchr(argv[i+1], ':') != NULL))) {
-          printf("Vous devez entrer un nom d'utilisateur de 20 caractères maximum ne contenant pas ':'\n");
+          wprintw(chat,"Vous devez entrer un nom d'utilisateur de 20 caractères maximum ne contenant pas ':'\n");
           return 0;
         }
         *login = (char*) malloc(size*sizeof(char));
@@ -446,7 +521,7 @@ int check_args(int argc, char *argv[], char *ip[], int *protocol, unsigned short
     }
   }
   if((*login == NULL) || (*ip == NULL)) {
-    printf("Login ou IP manquant\n");
+    wprintw(chat,"Login ou IP manquant\n");
     return 0;
   }
   return 1;
