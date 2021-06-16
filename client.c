@@ -69,11 +69,13 @@ void display_message(WINDOW* write, WINDOW* chat, char *msg) {
   char d[] = ":";
   char *p = strtok(msg, d);
   int v = atoi(p);
+
   switch(v){
     case SERVER_MSG_COMMAND :
       p = strtok(NULL, d);
       char* pseudo = p;
       p = strtok(NULL, d);
+
       wattron(chat,COLOR_PAIR(4));
       display_date_time(chat, p);
       wattroff(chat,COLOR_PAIR(4));
@@ -88,15 +90,18 @@ void display_message(WINDOW* write, WINDOW* chat, char *msg) {
       p = strtok(NULL, d);
       wprintw(chat,"%s", p);
       p = strtok(NULL, d);
+
       while(p != NULL){
         wprintw(chat,":%s", p);
         p = strtok(NULL, d);
       }
+
       wprintw(chat,"\n");
       wattroff(chat,COLOR_PAIR(7));
       break;
     case SERVER_COMMAND :
       p = strtok(NULL, d);
+
       wattron(chat,COLOR_PAIR(3));
       display_date_time(chat, p);
       wprintw(chat," -- ");
@@ -104,10 +109,12 @@ void display_message(WINDOW* write, WINDOW* chat, char *msg) {
       p = strtok(NULL, d);
       wprintw(chat,"%s", p);
       p = strtok(NULL, d);
+
       while(p != NULL){
         wprintw(chat,":%s", p);
         p = strtok(NULL, d);
       }
+
       wattroff(chat,COLOR_PAIR(3));
       wattron(chat,COLOR_PAIR(7));
       wprintw(chat,"\n");
@@ -115,6 +122,7 @@ void display_message(WINDOW* write, WINDOW* chat, char *msg) {
       break;
     case SERVER_ERROR_COMMAND :
       p = strtok(NULL, d);
+
       wattron(chat,COLOR_PAIR(1));
       display_date_time(chat, p);
       wprintw(chat," -- ");
@@ -122,10 +130,12 @@ void display_message(WINDOW* write, WINDOW* chat, char *msg) {
       p = strtok(NULL, d);
       wprintw(chat,"%s", p);
       p = strtok(NULL, d);
+
       while(p != NULL){
         wprintw(chat,":%s", p);
         p = strtok(NULL, d);
       }
+
       wattroff(chat,COLOR_PAIR(1));
       wattron(chat,COLOR_PAIR(7));
       wprintw(chat,"\n");
@@ -133,12 +143,15 @@ void display_message(WINDOW* write, WINDOW* chat, char *msg) {
       break;
     case SERVER_KICK_COMMAND :
       p = strtok(NULL, d);
+
       wattron(chat,COLOR_PAIR(1));
       display_date_time(chat, p);
       wprintw(chat," -- ");
       wprintw(chat,"[SERVEUR] : ");
+
       p = strtok(NULL, d);
       int v2 = atoi(p);
+
       switch(v2){
         case KICK_MSG_NAME_NOT_VALID :
           wprintw(chat,"EXCLU POUR CAUSE DE PSEUDO NON VALIDE");
@@ -164,6 +177,7 @@ void display_message(WINDOW* write, WINDOW* chat, char *msg) {
         default :
           break;
       }
+
       wattroff(chat,COLOR_PAIR(1));
       wattron(chat,COLOR_PAIR(7));
       wprintw(chat,"\n");
@@ -178,6 +192,7 @@ void display_message(WINDOW* write, WINDOW* chat, char *msg) {
       p = strtok(NULL, d);
       pseudo = p;
       p = strtok(NULL, d);
+
       wattron(chat,COLOR_PAIR(3));
       display_date_time(chat, p);
       wprintw(chat," -- ");
@@ -191,6 +206,7 @@ void display_message(WINDOW* write, WINDOW* chat, char *msg) {
       p = strtok(NULL, d);
       pseudo = p;
       p = strtok(NULL, d);
+
       wattron(chat,COLOR_PAIR(3));
       display_date_time(chat, p);
       wprintw(chat," -- ");
@@ -203,6 +219,7 @@ void display_message(WINDOW* write, WINDOW* chat, char *msg) {
     default :
       wprintw(chat,"D : %s\n", msg);
   }
+
   wmove(write,1,x);
   wrefresh(chat);
   wrefresh(write);
@@ -214,12 +231,14 @@ int write_message_server(int socket, int type_msg, char* msg) {
   char msg2[BUFFER_SIZE];
   sprintf(msg2, "%d:%s", type_msg,msg);
   int ret = write(socket, msg2, strlen(msg2));
+
   if(ret == -1) {
     perror("Error write()");
     getch();
     endwin();
     exit(errno);
   }
+
   return ret;
 }
 
@@ -227,6 +246,7 @@ int write_message_server_udp(struct sockaddr_in addr, int sock, int type_msg, ch
   char msg2[BUFFER_SIZE];
   sprintf(msg2, "%d:%s", type_msg,msg);
   int size = sizeof(addr);
+  
   if(type_msg == 2){
     if(sendto(sock, msg2, strlen(msg2), 0, (struct sockaddr *) &addr, size) < 0) {
       perror("sendto()");
@@ -234,25 +254,31 @@ int write_message_server_udp(struct sockaddr_in addr, int sock, int type_msg, ch
       endwin();
       exit(errno);
     }
+
     return 1;
   }
+
   if(sendto(sock, msg2, strlen(msg2), 0, (struct sockaddr *) &addr, size) < 0) {
     perror("sendto()");
     getch();
     endwin();
     exit(errno);
   }
+
   return 1;
 }
 
 int read_message_server(int socket, char* msg) {
+  
   int ret = read(socket, msg, BUFFER_SIZE - 1);
+
   if(ret == -1) {
     perror("Error read()");
     getch();
     endwin();
     exit(errno);
   }
+
   msg[ret] = '\0';
   return ret;
 }
@@ -260,12 +286,14 @@ int read_message_server(int socket, char* msg) {
 int read_message_server_udp(struct sockaddr_in addr, int sock, char* msg) {
   unsigned int size = sizeof(addr);
   int n;
+
   if((n = recvfrom(sock, msg, BUFFER_SIZE - 1, 0, (struct sockaddr *) &addr, &size)) < 0) {
     perror("recvfrom()");
     getch();
     endwin();
     exit(errno);
   }
+  
   msg[n] = '\0';
   return 1;
 }
@@ -283,12 +311,14 @@ void create_client_UDP(client *client, char *ip, unsigned short port) {
 
   client->udp = addr;
   int sock = socket(AF_INET, SOCK_DGRAM, 0);
+
   if(sock == -1) {
       perror("error socket()");
       getch();
       endwin();
       exit(1);
   }
+
   client->tcp = sock;
   
 } 
@@ -300,6 +330,8 @@ void create_client_TCP(client *client, char *ip, unsigned short port) {
   addr.sin_addr.s_addr = inet_addr(ip);
 
   client->tcp = socket(AF_INET, SOCK_STREAM, 0);
+  int ok = connect(client->tcp, (struct sockaddr *) &addr, sizeof(addr) );
+
   if(client->tcp == -1) {
     perror("error socket()");
     getch();
@@ -316,10 +348,7 @@ void create_client_TCP(client *client, char *ip, unsigned short port) {
   }
 }
 
-
-
 int main(int argc, char *argv[]) {
-  
   WINDOW *infos, *haut, *chat, *infos2, *bas, *write,*footer;
   
   initscr();
@@ -349,9 +378,6 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   
-  
-  
-
   scrollok(chat,TRUE);
   scrollok(write,TRUE);
   box(haut, ACS_VLINE, ACS_HLINE);
@@ -367,6 +393,7 @@ int main(int argc, char *argv[]) {
     endwin();
     return EXIT_FAILURE;
   }
+
   char *ip;
   char *login;
   int protocol = 0;
@@ -378,18 +405,76 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   } 
   
-  
-    
-  
-  //if(DEBUG) printf("Adresse : %s:%d - Type de connexion : %d - Pseudo : %s, \n", ip, port, protocol, login);
-  if(protocol)
-    mvwprintw(infos, 0, 1,"Adresse : %s:%d - Type de connexion : UDP - Pseudo : %s \n", ip, port, login);
-  else
-    mvwprintw(infos, 0, 1,"Adresse : %s:%d - Type de connexion : TCP - Pseudo : %s \n", ip, port, login);
+  if(protocol){
+    wattron(infos,COLOR_PAIR(7));
+    wprintw(infos, "Adresse : ");
+    wattroff(infos,COLOR_PAIR(7));
+    wattron(infos,COLOR_PAIR(2));
+    wprintw(infos, "%s", ip);
+    wattroff(infos,COLOR_PAIR(2));
+    wattron(infos,COLOR_PAIR(7));
+    wprintw(infos, ":");
+    wattroff(infos,COLOR_PAIR(7));
+    wattron(infos,COLOR_PAIR(2));
+    wprintw(infos, "%d", port);
+    wattroff(infos,COLOR_PAIR(2));
+    wattron(infos,COLOR_PAIR(7));
+    wprintw(infos, " - Type de connexion : ");
+    wattroff(infos,COLOR_PAIR(7));
+    wattron(infos,COLOR_PAIR(2));
+    wprintw(infos, "UDP", port);
+    wattroff(infos,COLOR_PAIR(2));
+    wattron(infos,COLOR_PAIR(7));
+    wprintw(infos, " - Pseudo : ");
+    wattroff(infos,COLOR_PAIR(7));
+    wattron(infos,COLOR_PAIR(2));
+    wprintw(infos, "%s \n", login);
+    wattroff(infos,COLOR_PAIR(2));
+  }
+  else{
+    wattron(infos,COLOR_PAIR(7));
+    wprintw(infos, "Adresse : ");
+    wattroff(infos,COLOR_PAIR(7));
+    wattron(infos,COLOR_PAIR(2));
+    wprintw(infos, "%s", ip);
+    wattroff(infos,COLOR_PAIR(2));
+    wattron(infos,COLOR_PAIR(7));
+    wprintw(infos, ":");
+    wattroff(infos,COLOR_PAIR(7));
+    wattron(infos,COLOR_PAIR(2));
+    wprintw(infos, "%d", port);
+    wattroff(infos,COLOR_PAIR(2));
+    wattron(infos,COLOR_PAIR(7));
+    wprintw(infos, " - Type de connexion : ");
+    wattroff(infos,COLOR_PAIR(7));
+    wattron(infos,COLOR_PAIR(2));
+    wprintw(infos, "TCP", port);
+    wattroff(infos,COLOR_PAIR(2));
+    wattron(infos,COLOR_PAIR(7));
+    wprintw(infos, " - Pseudo : ");
+    wattroff(infos,COLOR_PAIR(7));
+    wattron(infos,COLOR_PAIR(2));
+    wprintw(infos, "%s \n", login);
+    wattroff(infos,COLOR_PAIR(2));
+  }
   wrefresh(infos);
   mvwprintw(infos2, 0, 1,"Message : ");
   wrefresh(infos2);
-  mvwprintw(footer, 0, COLS/2 - 28,"Crédits : Julien Carcau - Guillaume Descroix - Louka Doz");
+  wattron(footer,COLOR_PAIR(2));
+  mvwprintw(footer, 0, COLS/2 - 23,"Julien Carcau ");
+  wattroff(footer,COLOR_PAIR(2));
+  wattron(footer,COLOR_PAIR(7));
+  wprintw(footer, "-");
+  wattroff(footer,COLOR_PAIR(7));
+  wattron(footer,COLOR_PAIR(2));
+  wprintw(footer, " Guillaume Descroix ");
+  wattroff(footer,COLOR_PAIR(2));
+  wattron(footer,COLOR_PAIR(7));
+  wprintw(footer, "-");
+  wattroff(footer,COLOR_PAIR(7));
+  wattron(footer,COLOR_PAIR(2));
+  wprintw(footer, " Louka Doz");
+  wattroff(footer,COLOR_PAIR(2));
   wrefresh(footer);
 
   client *c = (client*) malloc(sizeof(client));
@@ -397,66 +482,76 @@ int main(int argc, char *argv[]) {
   if(protocol) {  // UDP client
     create_client_UDP(c, ip, port);
     int fork_status = fork();
+    
     if(fork_status == -1) {
       perror("Error fork()");
       getch();
       endwin();
       return EXIT_FAILURE;
     }
+
     if(fork_status > 0) { // write server
       char *msg = (char*) malloc(23*sizeof(char));;
+
       sprintf(msg, "%s", c->name);
-      //printf("TEST\n");
       write_message_server_udp(c->udp, c->tcp, 1,msg); 
-      //free(msg);
+
       while(1) {
         char buf_client[BUFFER_SIZE - 3];
         int nb_read = mvwgetnstr(write, 1, 0, buf_client, BUFFER_SIZE - 3);
+
         if(nb_read == ERR || strlen(buf_client) == 0)
           continue;
+
         wprintw(write, "\n");
         wrefresh(write);
-        if(!strcmp(buf_client, "/quit")) {
+        if(!strcmp(buf_client, "/quit"))
           write_message_server_udp(c->udp, c->tcp, 0, buf_client);
-          //kill(fork_status, SIGKILL);
-        }
         else
           write_message_server_udp(c->udp, c->tcp, 2, buf_client);
       }
-    } else {              // read server
+    } else {  
+                  // read server
       while(1) {
         char buf_server[BUFFER_SIZE];
         read_message_server_udp(c->udp, c->tcp, buf_server);
         display_message(write, chat, buf_server);
       }
     }
+
     close_socket_client(c->tcp);
   } else {        // TCP client
     create_client_TCP(c, ip, port);
     int fork_status = fork();
+
     if(fork_status == -1) {
       perror("Error fork()");
       getch();
       endwin();
       return EXIT_FAILURE;
     }
+
     if(fork_status > 0) { // write server
-      char *msg = (char*) malloc(23*sizeof(char));;
+      char *msg = (char*) malloc(23*sizeof(char));
+
       sprintf(msg, "%s", c->name);
       write_message_server(c->tcp, 1, msg);
+
       while(1) {
         char buf_client[BUFFER_SIZE - 3];
         int nb_read = mvwgetnstr(write, 1, 0, buf_client, BUFFER_SIZE - 3);
+        
         if(nb_read == ERR || strlen(buf_client) == 0)
           continue;
+
         wprintw(write, "\n");
         wrefresh(write);
-        if(!strcmp(buf_client, "/quit")) {
+        if(!strcmp(buf_client, "/quit"))
           write_message_server(c->tcp, 0, buf_client);
-        }
         else
           write_message_server(c->tcp, 2, buf_client);
       }
+
     } else {              // read server
       while(1) {
         char buf_server[BUFFER_SIZE];
@@ -464,10 +559,13 @@ int main(int argc, char *argv[]) {
         display_message(write, chat, buf_server);
       }
     }
+
     close_socket_client(c->tcp);
   }
+
   free(ip);
   free(login);
+
   return(0);
 }
 
@@ -477,9 +575,11 @@ int check_args(WINDOW* chat, int argc, char *argv[], char *ip[], int *protocol, 
       if(i+1 <= argc) {
         int size = strlen(argv[i+1]);
         int occurences = 0;
+
         for(int j=0; j<size; j++) {
           if(argv[i+1][j] == '.') occurences++;
         }
+
         if(((size < 7) || (size > 15) || occurences != 3)) {
           wprintw(chat,"Veuillez fournir une adresse IP valide\n");
           return 0;
